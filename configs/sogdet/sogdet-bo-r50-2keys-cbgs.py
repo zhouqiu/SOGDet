@@ -1,7 +1,4 @@
 # Copyright (c) Phigent Robotics. All rights reserved.
-
-# _base_ = ['../_base_/datasets/nus-3d.py',
-#           '../_base_/default_runtime.py']
 _base_ = ['../_base_/default_runtime.py']
 
 plugin = True
@@ -21,7 +18,7 @@ data_config={
     'cams': ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
              'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT'],
     'Ncams': 6,
-    'input_size': (512, 1408),
+    'input_size': (256, 704),
     'src_size': (900, 1600),
 
     # Augmentation
@@ -40,18 +37,34 @@ grid_config={
         'dbound': [1.0, 60.0, 1.0],}
 
 voxel_size = [0.1, 0.1, 0.2]
+voxel_grid_num = [128, 128, 10]
+
+learning_map = {
+                1: 0,   5: 0,   7: 0,   8: 0,
+                10: 0,  11: 0,  13: 0,  19: 0,
+                20: 0,  0: 0,   29: 0,  31: 0,
+                9: 1,   14: 2,  15: 3,  16: 3,
+                17: 4,  18: 5,  21: 6,  2: 7,
+                3: 7,   4: 7,   6: 7,   12: 8,
+                22: 9,  23: 10, 24: 11, 25: 12,
+                26: 13, 27: 14, 28: 15, 30: 16,
+                32: 17
+}
+
+class_names_seg16=['noise','barrier','bicycle','bus','car','construction_vehicle','motorcycle','pedestrian','traffic_cone','trailer','truck',
+'driveable_surface','other_flat','sidewalk','terrain','manmade','vegetation','empty']
 
 numC_Trans=64
 
 model = dict(
-    type='BEVDepth4D',
+    type='BEVDepth4DOccu',
     aligned=True,
     detach=True,
     before=True,
     img_backbone=dict(
-        pretrained='../resnet101-5d3b4d8f.pth',
+        pretrained='torchvision://resnet50',
         type='ResNet',
-        depth=101,
+        depth=50,
         num_stages=4,
         out_indices=(2, 3),
         frozen_stages=-1,
@@ -75,12 +88,30 @@ model = dict(
                                                    num_layer=[3,], num_channels=[256,], stride=[1,],)),
     img_bev_encoder_backbone = dict(type='ResNetForBEVDet',  numC_input=numC_Trans*2,
                                     num_channels=[128, 256, 512]),
-    img_bev_encoder_neck = dict(type='FPN_LSS',
+    img_bev_encoder_neck = dict(type='FPN_LSS_Fusion_Momentum',
+                                momentum_weight=0.9,
                                 in_channels=numC_Trans*8+numC_Trans*2,
                                 out_channels=256),
+    devoxel_backbone=dict(
+        type='ResNetForBEVDet',
+        numC_input=numC_Trans,
+        num_channels=[numC_Trans * 2, numC_Trans * 4, numC_Trans * 8]),
+    devoxel_neck=dict(
+        type='FPN_LSS_Voxel',
+        in_channels=numC_Trans * 8 + numC_Trans * 2,
+        out_channels=256),
     pre_process = dict(type='ResNetForBEVDet',numC_input=numC_Trans,
                       num_layer=[2,], num_channels=[64,], stride=[1,],
                       backbone_output_ids=[0,]),
+    voxel_bev_head=dict(type='OccFuserHead',
+                        grid_size=voxel_grid_num,
+                        nbr_classes=2,
+                        in_dims=256,
+                        out_dims=64,
+                        loss_weight=10,
+                        balance=6,
+                        ignore_label=-1,
+                        weight=[1.0, 2.0]),
     pts_bbox_head=dict(
         type='TaskSpecificCenterHead',
         task_specific=True,
@@ -154,7 +185,10 @@ train_pipeline = [
     dict(type='LoadMultiViewImageFromFiles_BEVDet', is_train=True, data_config=data_config,
          sequential=True, aligned=True, trans_only=False),
     dict(
-        type='LoadPointsFromFile',
+        type='LoadPointsFromFileOccupancy',
+        occupancy_root="./data/nuscenes/pc_panoptic/",
+        learning_map=learning_map,
+        label_from='panoptic',
         coord_type='LIDAR',
         load_dim=5,
         use_dim=5,
@@ -172,11 +206,18 @@ train_pipeline = [
         flip_ratio_bev_horizontal=0.5,
         flip_ratio_bev_vertical=0.5,
         update_img2lidar=True),
+    dict(type='GenVoxelLabel',
+         grid_size=voxel_grid_num,
+         fixed_volume_space=True,
+         max_volume_space=point_cloud_range[3:],
+         min_volume_space=point_cloud_range[:3],
+         is_binary=True
+         ),
     dict(type='PointToMultiViewDepth', grid_config=grid_config),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
     dict(type='DefaultFormatBundle3D', class_names=class_names),
-    dict(type='Collect3D', keys=['img_inputs', 'gt_bboxes_3d', 'gt_labels_3d'],
+    dict(type='Collect3D', keys=['img_inputs', 'gt_bboxes_3d', 'gt_labels_3d', 'gt_voxel_bev'],
          meta_keys=('filename', 'ori_shape', 'img_shape', 'lidar2img',
                             'depth2img', 'cam2img', 'pad_shape',
                             'scale_factor', 'flip', 'pcd_horizontal_flip',
@@ -191,11 +232,21 @@ test_pipeline = [
          sequential=True, aligned=True, trans_only=False),
     # load lidar points for --show in test.py only
     dict(
-        type='LoadPointsFromFile',
+        type='LoadPointsFromFileOccupancy',
+        occupancy_root="./data/nuscenes/pc_panoptic/",
+        learning_map=learning_map,
+        label_from='panoptic',
         coord_type='LIDAR',
         load_dim=5,
         use_dim=5,
         file_client_args=file_client_args),
+    dict(type='GenVoxelLabel',
+         grid_size=voxel_grid_num,
+         fixed_volume_space=True,
+         max_volume_space=point_cloud_range[3:],
+         min_volume_space=point_cloud_range[:3],
+         is_binary=True
+         ),
     dict(type='PointToMultiViewDepth', grid_config=grid_config),
     dict(
         type='MultiScaleFlipAug3D',
@@ -207,7 +258,7 @@ test_pipeline = [
                 type='DefaultFormatBundle3D',
                 class_names=class_names,
                 with_label=False),
-            dict(type='Collect3D', keys=['points', 'img_inputs'],
+            dict(type='Collect3D', keys=['points', 'img_inputs', 'gt_voxel_bev'],
                  meta_keys=('filename', 'ori_shape', 'img_shape', 'lidar2img',
                             'depth2img', 'cam2img', 'pad_shape',
                             'scale_factor', 'flip', 'pcd_horizontal_flip',
@@ -218,24 +269,6 @@ test_pipeline = [
                  )
         ])
 ]
-# construct a pipeline for data and gt loading in show function
-# please keep its loading function consistent with test_pipeline (e.g. client)
-# eval_pipeline = [
-#     dict(type='LoadMultiViewImageFromFiles_BEVDet', data_config=data_config,
-#          sequential=True, aligned=True, trans_only=False),
-#     dict(
-#         type='LoadPointsFromFile',
-#         coord_type='LIDAR',
-#         load_dim=5,
-#         use_dim=5,
-#         file_client_args=file_client_args),
-#     dict(type='PointToMultiViewDepth', grid_config=grid_config),
-#     dict(
-#         type='DefaultFormatBundle3D',
-#         class_names=class_names,
-#         with_label=False),
-#     dict(type='Collect3D', keys=['img_inputs'])
-# ]
 
 input_modality = dict(
     use_lidar=False,
@@ -245,8 +278,8 @@ input_modality = dict(
     use_external=False)
 
 data = dict(
-    samples_per_gpu=1,
-    workers_per_gpu=0,
+    samples_per_gpu=8,
+    workers_per_gpu=4,
     train=dict(
         type='CBGSDataset',
         dataset=dict(
@@ -302,5 +335,4 @@ lr_config = dict(
     warmup_ratio=0.001,
     step=[16, 22])
 runner = dict(type='EpochBasedRunner', max_epochs=24)
-evaluation = dict(start=5, interval=1, metric='bbox')
-# work_dir = "/85069/hanchao/work_dir_flow/bevdepth4d-r101-1"
+

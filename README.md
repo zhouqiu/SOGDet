@@ -2,12 +2,12 @@
 
 ## Main Results
 
-| Method            | mAP      | NDS     |   Model |
-|--------|----------|---------|--------|
-| [**SOGDet-BO-r50**](configs/bev_exp/sogdet-bo-r50.py)   | 38.2     | 50.2    | [google](https://drive.google.com/file/d/1fGwb2Jy7myZrrRYTnTyg6R4b1bI_ipnH)  |
-| [**SOGDet-SE-r50***](configs/bev_exp/sogdet-se-r50.py)  | 38.8     | 50.6    | [google](https://drive.google.com/file/d/1iNixRbGuDfrTyRZgOcBwkaYdGssS7kT4)  |
-| [**SOGDet-BO-r101**](configs/bev_exp/sogdet-bo-r101.py) | 43.9     | 55.4    | [google](https://drive.google.com/file/d/17qyBhH6SO3FpHmvLwIx1i1qjnA348OIF)  |
-| [**SOGDet-SE-r101***](configs/bev_exp/sogdet-se-r101.py)| 45.8     | 56.6    | [google](https://drive.google.com/file/d/1QMKhrNdruoQ_eQMaTldye6tRs2AtFK60)  | 
+| Method                                                           | mAP      | NDS     |   Model |
+|------------------------------------------------------------------|----------|---------|--------|
+| [**SOGDet-BO-r50**](configs/bev_exp/sogdet-bo-r50-2keys-cbgs.py) | 38.2     | 50.2    | [google](https://drive.google.com/file/d/1fGwb2Jy7myZrrRYTnTyg6R4b1bI_ipnH)  |
+| [**SOGDet-SE-r50***](configs/bev_exp/sogdet-se-r50-2keys-cbgs.py) | 38.8     | 50.6    | [google](https://drive.google.com/file/d/1iNixRbGuDfrTyRZgOcBwkaYdGssS7kT4)  |
+| [**SOGDet-BO-r101**](configs/bev_exp/sogdet-bo-r101-2keys-cbgs.py) | 43.9     | 55.4    | [google](https://drive.google.com/file/d/17qyBhH6SO3FpHmvLwIx1i1qjnA348OIF)  |
+| [**SOGDet-SE-r101***](configs/bev_exp/sogdet-se-r101-2keys-cbgs.py) | 45.8     | 56.6    | [google](https://drive.google.com/file/d/1QMKhrNdruoQ_eQMaTldye6tRs2AtFK60)  | 
 * Memory is tested in the training process with batch 1 and without using torch.checkpoint.
 
 
