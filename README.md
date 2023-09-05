@@ -61,4 +61,3 @@ This project is not possible without multiple great open-sourced code bases. We 
 * [BEVDet](https://github.com/HuangJunJie2017/BEVDet)
 * [BEVDepth](https://github.com/Megvii-BaseDetection/BEVDepth)
 
-git token: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
