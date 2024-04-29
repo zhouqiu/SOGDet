@@ -1,6 +1,31 @@
-# SOGDet
+# SOGDet: Semantic-Occupancy Guided Multi-view 3D Object Detection
 
-## Main Results
+The official implementation of SOGDet.
+
+> ### [SOGDet: Semantic-Occupancy Guided Multi-view 3D Object Detection](https://ojs.aaai.org/index.php/AAAI/article/download/28600/29167)
+> [Qiu Zhou](https://scholar.google.com/citations?user=vosYoZUAAAAJ),
+> [Jinming Cao](https://scholar.google.com/citations?user=GSte8PMAAAAJ), 
+> [Hanchao Leng](https://scholar.google.com/citations?user=sTf4klUAAAAJ), 
+> [Yifang Yin](https://scholar.google.com/citations?user=TRfTdBAAAAAJ),
+> Kun Yu,
+> [Roger Zimmermann](https://scholar.google.com/citations?user=IDREwXEAAAAJ), 
+> *AAAI 2024.*
+
+## Introduction
+
+We propose a novel approach called SOGDet
+(Semantic-Occupancy Guided Multi-view 3D Object Detection), 
+that leverages a 3D semantic-occupancy branch to improve 
+the accuracy of 3D object detection. In particular, the
+physical context modeled by semantic occupancy helps the
+detector to perceive the scenes in a more holistic view. Our
+SOGDet is flexible to use and can be seamlessly integrated
+with most existing BEV-based methods. 
+
+![image](docs/pipeline.png)
+
+## Usage
+### Main Results
 
 | Method                                                           | mAP      | NDS     |   Model |
 |------------------------------------------------------------------|----------|---------|--------|
@@ -11,14 +36,14 @@
 * Memory is tested in the training process with batch 1 and without using torch.checkpoint.
 
 
-## Environment Installation 
+### Environment Installation 
 Please see [install.md](docs/install.md).
 
 
-## Data Preparation
+### Data Preparation
 Please see [install.md](docs/data_preparation.md).
 
-## Train
+### Train
 For training process, we use config file in `$SOGDet/configs/sogdet` to define model, dataset and hyber parameters.
 Run the following command to start a training process.
 For example:
@@ -26,7 +51,7 @@ For example:
 tools/dist_train.sh configs/sogdet-se-r50.py 8 
 ```
 
-## Test
+### Test
 For testing bbox scores, run the following command:
 ```
 tools/dist_test.sh configs/sogdet-se-r50.py sogdet-se-r50.pth 8 --eval bbox  
@@ -37,7 +62,7 @@ tools/dist_test_plus.sh configs/sogdet-se-r50.py sogdet-se-r50.pth 8 --eval bbox
 ```
 
 
-## Visualization
+### Visualization
 For visualizing results, we should add parameter '--show-dir xxx' to save results during running test commands.
 For example:
 ```bash
@@ -51,6 +76,19 @@ python tools/vis_pred_gt_od_hybrid.py --bbox-path work_dirs/sogdet-se-r50/ --vox
 python tools/vis_pred_gt_occ.py --voxel-path work_dirs/sogdet-se-r50/ --save-path work_dirs/sogdet-se-r50/
 ```
 
+## Citation
+If you find this repo useful, please consider citing:
+```
+@inproceedings{zhou2024sogdet,
+  title={SOGDet: Semantic-occupancy guided multi-view 3D object detection},
+  author={Zhou, Qiu and Cao, Jinming and Leng, Hanchao and Yin, Yifang and Kun, Yu and Zimmermann, Roger},
+  booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume={38},
+  number={7},
+  pages={7668--7676},
+  year={2024}
+}
+```
 
 ## Acknowledgement
 This project is not possible without multiple great open-sourced code bases. We list some notable examples below.
