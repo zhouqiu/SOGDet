@@ -39,7 +39,7 @@ pip install mmsegmentation==0.14.1
 git clone https://github.com/open-mmlab/mmdetection3d.git
 cd mmdetection3d
 git checkout v0.17.1 # Other versions may not be compatible.
-python setup.py install
+pip install -v -e .
 ```
 
 **f. Install SOGDet.**
