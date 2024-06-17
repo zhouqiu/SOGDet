@@ -74,7 +74,7 @@ if __name__ == '__main__':
             ),
             make_cuda_ext(
                 name='iou3d_cuda',
-                module='mmdet3d.ops.iou3d',
+                module='mmdet3d_plugin.ops.iou3d',
                 sources=[
                     'src/iou3d.cpp',
                     'src/iou3d_kernel.cu',
